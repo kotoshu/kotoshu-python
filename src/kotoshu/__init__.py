@@ -168,6 +168,11 @@ class Client:
         raise KotoshuError(f"{err}: {msg}")
 
 
+# Imported at the bottom: kotoshu.native imports the dataclasses and
+# error types defined above from this module, so they must exist first.
+from .native import NativeBackend, NativeUnavailableError, backend
+
+
 __all__ = [
     "Client",
     "DocumentResult",
@@ -176,4 +181,7 @@ __all__ = [
     "Detection",
     "KotoshuError",
     "ResourceNotSetupError",
+    "NativeBackend",
+    "NativeUnavailableError",
+    "backend",
 ]

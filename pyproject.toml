@@ -17,6 +17,13 @@ classifiers = [
   "Topic :: Text Processing",
 ]
 
+# The `native` extra resolves only once the `kotoshu-native` wheel is
+# published to PyPI (blocked on owner credentials; see README "Native
+# backend"). Until then build it locally with `maturin develop` inside
+# kotoshu-rs/kotoshu-python.
+[project.optional-dependencies]
+native = ["kotoshu-native"]
+
 [project.urls]
 Homepage = "https://github.com/kotoshu/kotoshu-python"
 Source = "https://github.com/kotoshu/kotoshu-python"
