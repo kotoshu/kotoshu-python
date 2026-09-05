@@ -1,0 +1,70 @@
+# Trusted publishing for the pure-Python `kotoshu` client: keyless OIDC
+# (the repo's twin of kotoshu-rs release-pypi.yml for `kotoshu-native`).
+# NO token secret anywhere — pypa/gh-action-pypi-publish exchanges the
+# GitHub OIDC token for the upload.
+#
+# OWNER REGISTRATION (one-time; this file must exist on the default
+# branch first — merge before registering):
+#   https://pypi.org/manage/project/kotoshu/settings/publishing/
+#     Owner: kotoshu | Repository: kotoshu-python
+#     Workflow filename: release-pypi.yml | Environment: none (blank)
+#
+# Tag convention (matches kotoshu-rs: distribution name plus -v): push
+# kotoshu-v<version> after setting the version in pyproject.toml — the
+# version and the tag are always owner decisions.
+
+name: Release PyPI (kotoshu)
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["kotoshu-v*"]
+
+permissions:
+  contents: read
+  id-token: write # the OIDC token that replaces the PyPI API token
+
+concurrency:
+  group: release-pypi
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install --upgrade build
+          python -m build --outdir dist
+      - name: Smoke the built wheel
+        # test_native.py runs fully offline (it simulates the extension
+        # module); the HTTP client tests need a live server and skip.
+        run: |
+          python -m pip install dist/kotoshu-*.whl pytest
+          python -m pytest tests/test_native.py -q
+          python -c "from kotoshu import Client; import kotoshu.native; print('kotoshu imports; native available:', kotoshu.native.available())"
+      - name: Report what will be published
+        run: ls -lh dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Publish to PyPI (attestations on, keyless)
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          print-hash: true
+          attestations: true

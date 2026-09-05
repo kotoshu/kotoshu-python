@@ -5,10 +5,13 @@ wheel built from the kotoshu-rs repository -- behind the same result
 shapes the HTTP client returns, so ``Suggestion`` objects are identical
 across backends.
 
-The wheel is not published to PyPI yet (blocked on owner credentials),
-so a plain ``pip install kotoshu`` has no native engine: ``available()``
-is False and the default ``auto`` backend quietly falls back to HTTP.
-Build the module locally to use it today (see README, "Native backend").
+The wheel is published on PyPI (``pip install kotoshu-native``, or
+``pip install kotoshu[native]``); platform wheels cover linux
+x86_64/aarch64, macOS x86_64/arm64 and windows x64 from the first
+matrix-built release onward -- until such a release reaches PyPI, some
+platforms compile from source (needs a Rust toolchain). Without the
+module ``available()`` is False and the default ``auto`` backend quietly
+falls back to HTTP (see README, "Native backend").
 """
 
 from __future__ import annotations
@@ -34,9 +37,10 @@ AUTO = "auto"
 _UNAVAILABLE_MESSAGE = (
     "the native backend was requested (KOTOSHU_BACKEND=native) but the "
     "'kotoshu_native' extension module could not be imported.\n"
-    "The 'kotoshu-native' wheel is not published to PyPI yet (pending "
-    "credentials); until then build it locally from the kotoshu-rs "
-    "repository:\n"
+    "Install the wheel from PyPI: pip install kotoshu-native\n"
+    "(or pip install kotoshu[native]); on a platform without a prebuilt "
+    "wheel this compiles from source, which needs a Rust toolchain. "
+    "Alternatively build it locally from the kotoshu-rs repository:\n"
     "  python3 -m venv .venv && . .venv/bin/activate\n"
     "  pip install maturin\n"
     "  maturin develop   # inside kotoshu-rs/kotoshu-python\n"

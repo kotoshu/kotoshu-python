@@ -84,10 +84,26 @@ parsing, no language detection.
 
 ### Getting the wheel
 
-The `kotoshu-native` wheel is **not published to PyPI yet** (publishing
-is blocked on owner credentials), so `pip install kotoshu[native]`
-resolves only after that first publish. Until then build it locally from
-the [kotoshu-rs](https://github.com/kotoshu/kotoshu-rs) repository:
+`kotoshu-native` 0.1.0 **is live on PyPI**, so `pip install kotoshu[native]`
+resolves everywhere — but 0.1.0 ships an sdist plus a single cp310 macOS
+arm64 wheel; on every other platform pip compiles the sdist, which needs
+a Rust toolchain. The CI wheel matrix in
+[kotoshu-rs](https://github.com/kotoshu/kotoshu-rs) (`python-wheels.yml`)
+builds and smoke-tests the full platform coverage below, published
+keyless by `release-pypi.yml` behind the `kotoshu-native-v*` tag — every
+supported platform gets a binary wheel from the next release onward.
+
+| Platform | Wheels | Status |
+|---|---|---|
+| linux x86_64, manylinux_2_28 | cp310–cp313 | CI wired, ships from the next `kotoshu-native` release |
+| linux aarch64, manylinux_2_28 | cp310–cp313 | CI wired, ships from the next `kotoshu-native` release |
+| macOS x86_64 | cp310–cp313 | CI wired, ships from the next `kotoshu-native` release |
+| macOS arm64 | cp310–cp313 | cp310 live in 0.1.0; cp311–cp313 from the next release |
+| windows x64 | cp310–cp313 | CI wired, ships from the next `kotoshu-native` release |
+| windows arm64 | — | not built (no MSVC x64 cross toolchain on arm64 runners) |
+
+Before then, or for a locally modified engine, build it yourself from the
+[kotoshu-rs](https://github.com/kotoshu/kotoshu-rs) repository:
 
 ```bash
 python3 -m venv .venv && . .venv/bin/activate
@@ -98,6 +114,47 @@ maturin develop
 
 Without the wheel nothing changes: `auto` silently uses HTTP and the
 client behaves exactly as before.
+
+## Releases and PyPI trusted publishing
+
+This repository publishes one distribution — `kotoshu` (pure Python,
+0.1.0 live). Its sibling `kotoshu-native` (the Rust extension wheel) is
+published from [kotoshu-rs](https://github.com/kotoshu/kotoshu-rs). Both
+publish keyless via PyPI trusted publishing (GitHub OIDC, no API token
+stored anywhere):
+
+| Distribution | Repository | Workflow | Tag | Status |
+|---|---|---|---|---|
+| `kotoshu` | kotoshu/kotoshu-python | `release-pypi.yml` | `kotoshu-v*` | wired here |
+| `kotoshu-native` | kotoshu/kotoshu-rs | `release-pypi.yml` | `kotoshu-native-v*` | wired in kotoshu-rs |
+
+Releasing (owner actions): set the version, merge to main, push the tag.
+`release-pypi.yml` then builds the sdist + wheel, smoke-tests the wheel
+(import + the offline `tests/test_native.py` suite), and publishes with
+`pypa/gh-action-pypi-publish` (`id-token: write`, attestations on).
+
+### Owner registration (one-time, per project)
+
+Both PyPI projects already exist, so registration is a per-project
+publisher (the account-level page, pypi.org/manage/account/publishing/,
+only hosts pending publishers for never-published names). The workflow
+file must exist on the repository's default branch first — merge before
+registering.
+
+For `kotoshu` (this repository):
+
+1. Open <https://pypi.org/manage/project/kotoshu/settings/publishing/>.
+2. Add a publisher with:
+   - Owner: `kotoshu`
+   - Repository: `kotoshu-python`
+   - Workflow filename: `release-pypi.yml`
+   - Environment name: leave blank (none)
+3. Verify, then the first `kotoshu-v*` tag publishes keyless.
+
+For `kotoshu-native` (kotoshu-rs): same steps at
+<https://pypi.org/manage/project/kotoshu-native/settings/publishing/>
+with Repository `kotoshu-rs` — full procedure in that repository's
+`kotoshu-python/RELEASING.md`.
 
 ## License
 
